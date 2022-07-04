@@ -1,6 +1,8 @@
 import * as mongoose from 'mongoose';
 import { logger } from './logSettings';
-import type { AutoIncrementIDOptions, AutoIncrementIDTrackerSpec, AutoIncrementOptionsSimple } from './types';
+import type * as types from './types';
+
+export { types };
 
 const DEFAULT_INCREMENT = 1;
 
@@ -20,10 +22,10 @@ export function isNullOrUndefined(val: unknown): val is null | undefined {
  */
 export function AutoIncrementSimple(
   schema: mongoose.Schema<any>,
-  options: AutoIncrementOptionsSimple[] | AutoIncrementOptionsSimple
+  options: types.AutoIncrementOptionsSimple[] | types.AutoIncrementOptionsSimple
 ): void {
   // convert normal object into an array
-  const fields: AutoIncrementOptionsSimple[] = Array.isArray(options) ? options : [options];
+  const fields: types.AutoIncrementOptionsSimple[] = Array.isArray(options) ? options : [options];
   logger.info('Initilaize AutoIncrement for an schema with %d fields to increment', fields.length);
 
   if (fields.length <= 0) {
@@ -61,7 +63,7 @@ export function AutoIncrementSimple(
 }
 
 /** The Schema used for the trackers */
-const IDSchema = new mongoose.Schema<AutoIncrementIDTrackerSpec>(
+const IDSchema = new mongoose.Schema<types.AutoIncrementIDTrackerSpec>(
   {
     field: String,
     modelName: String,
@@ -79,9 +81,9 @@ export const AutoIncrementIDSkipSymbol = Symbol('AutoIncrementIDSkip');
  * @param schema The Schema
  * @param options The Options
  */
-export function AutoIncrementID(schema: mongoose.Schema<any>, options: AutoIncrementIDOptions): void {
+export function AutoIncrementID(schema: mongoose.Schema<any>, options: types.AutoIncrementIDOptions): void {
   /** The Options with default options applied */
-  const opt: Required<AutoIncrementIDOptions> = {
+  const opt: Required<types.AutoIncrementIDOptions> = {
     field: '_id',
     incrementBy: DEFAULT_INCREMENT,
     trackerCollection: 'identitycounters',
@@ -95,7 +97,7 @@ export function AutoIncrementID(schema: mongoose.Schema<any>, options: AutoIncre
     throw new Error(`Field "${opt.field}" is not an SchemaNumber!`);
   }
 
-  let model: mongoose.Model<AutoIncrementIDTrackerSpec>;
+  let model: mongoose.Model<types.AutoIncrementIDTrackerSpec>;
 
   logger.info('AutoIncrementID called with options %O', opt);
 
@@ -108,7 +110,7 @@ export function AutoIncrementID(schema: mongoose.Schema<any>, options: AutoIncre
       logger.info('Creating idtracker model named "%s"', opt.trackerModelName);
       // needs to be done, otherwise "undefiend" error if the plugin is used in an sub-document
       const db: mongoose.Connection = this.db ?? (this as any).ownerDocument().db;
-      model = db.model<AutoIncrementIDTrackerSpec>(opt.trackerModelName, IDSchema, opt.trackerCollection);
+      model = db.model<types.AutoIncrementIDTrackerSpec>(opt.trackerModelName, IDSchema, opt.trackerCollection);
       // test if the counter document already exists
       const counter = await model
         .findOne({
@@ -169,5 +171,3 @@ export function AutoIncrementID(schema: mongoose.Schema<any>, options: AutoIncre
     return;
   });
 }
-
-export * from './types';
